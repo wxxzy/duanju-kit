@@ -1,0 +1,19 @@
+imageio-ffmpeg>=0.4.9
+openpyxl>=3.1
+tabulate>=0.9
+# 花字自动断行要用它量字宽（缺了会退化成按字符数估算）
+pillow>=10.0
+pyyaml>=6
+
+# ---- AI 能力（hot 之外的三项需要）----
+# 国内建议走镜像装，官方源下 ctranslate2 会卡：
+#   pip install -i https://mirrors.aliyun.com/pypi/simple/ faster-whisper edge-tts
+faster-whisper>=1.2
+edge-tts>=7
+# ---- 桌面客户端（app 命令）----
+# 用系统自带的 Edge WebView2，不打包浏览器内核，约 5MB
+#   pip install -i https://mirrors.aliyun.com/pypi/simple/ pywebview
+pywebview>=5.0
+
+# ---- 打包成 exe（只用一次，不打 exe 可以不装）----
+# pyinstaller>=6.0

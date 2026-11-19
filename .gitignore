@@ -1,0 +1,65 @@
+# ===== 素材与产出（一律不进仓库）=====
+# 原始素材、切片、成片、整季产物
+素材/
+素材库/
+切片/
+成片/
+产出/
+gui_out/
+dist/
+build/
+
+# 各类自检产物（含 mp4 / jpg / xlsx）
+_自检*/
+_e3/
+总纲_*/
+封面/
+
+# 视频 / 音频 / 图片 / 表格——不管放在哪都不推
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.flv
+*.webm
+*.mp3
+*.m4a
+*.wav
+*.aac
+*.flac
+*.ogg
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.xlsx
+*.xls
+*.srt
+*.ass
+*.vtt
+
+# ===== 缓存与运行时 =====
+.djkit/
+.cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+*.log
+*.tmp
+
+# ===== 本地配置（可能含 API key）=====
+# 真实配置在 ~/.djkit/llm.yaml，这里只挡误放在项目内的副本
+llm.yaml
+*.local.yaml
+.env
+.env.*
+!.env.example
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

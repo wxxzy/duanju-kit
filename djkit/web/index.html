@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>djkit 解说工坊</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">djkit<span>解说工坊</span></div>
+  <nav id="steps">
+    <button data-step="1" class="active">1 素材</button>
+    <button data-step="2" disabled>2 片段</button>
+    <button data-step="3" disabled>3 文案</button>
+    <button data-step="4" disabled>4 出片</button>
+  </nav>
+  <div class="status" id="status">就绪</div>
+</header>
+
+<main>
+  <div id="content">
+
+    <section class="pane active" id="pane-1">
+      <h2>素材</h2>
+      <div class="field">
+        <label>视频路径（长片、单集都行）</label>
+        <div class="picker">
+          <input type="text" id="src" spellcheck="false"
+                 placeholder="C:\素材\某剧E01.mp4">
+          <button class="ghost" id="pick" style="display:none">选择…</button>
+        </div>
+        <div class="hint" id="src-hint"></div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>候选段数</label>
+          <input type="number" id="top" value="4" min="1" max="20">
+        </div>
+        <div class="field">
+          <label>每段时长（秒）</label>
+          <input type="number" id="len" value="12" min="2" max="30">
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>连贯窗口（秒，0=不限制）</label>
+          <input type="number" id="window" value="150" min="0" max="1800" step="30">
+        </div>
+        <div class="field">
+          <label>转写模型</label>
+          <select id="model">
+            <option value="base.en">base.en（快）</option>
+            <option value="small.en" selected>small.en（推荐）</option>
+            <option value="medium.en">medium.en（准，慢）</option>
+            <option value="small">small（中文片源）</option>
+            <option value="medium">medium（中文片源）</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>语言</label>
+        <select id="lang">
+          <option value="en" selected>英语</option>
+          <option value="zh">中文</option>
+          <option value="">自动</option>
+        </select>
+      </div>
+      <div class="bible">
+        <div class="bible-head">
+          <b>剧集总纲</b>
+          <span id="bible-state">未生成</span>
+        </div>
+        <div class="hint" id="bible-hint">
+          整季读一遍（每集约 1 分钟转写），之后每一集自动带上统一称呼和前情。
+          做单集可以不生成；做整季建议先生成。
+        </div>
+        <div class="two">
+          <div class="field">
+            <label>每集采样（分钟）</label>
+            <input type="number" id="bible-min" value="7" min="3" max="15">
+          </div>
+          <div class="field">
+            <label>只跑前 N 集（0=全部）</label>
+            <input type="number" id="bible-eps" value="0" min="0" max="50">
+          </div>
+        </div>
+        <div class="field">
+          <label>手工译名（可选，优先级最高）</label>
+          <input type="text" id="bible-names" spellcheck="false"
+                 placeholder="Michael Burnham=迈克尔·伯纳姆, USS Shenzhou=神舟号">
+          <div class="hint">语音识别把名字听错时用它钉死，逗号分隔，写「原名=译名」。</div>
+        </div>
+        <div class="bible-btns">
+          <button class="ghost" id="bible-run">生成总纲</button>
+          <button class="ghost" id="bible-remix" style="display:none">只重汇总</button>
+        </div>
+      </div>
+
+      <div class="bible">
+        <div class="bible-head">
+          <b>整季批量</b>
+          <span id="batch-state">未开始</span>
+        </div>
+        <div class="hint" id="batch-hint">
+          选一个剧集目录，按当前参数把每一集全自动跑一遍（不逐集改文案）。
+          产物在 gui_out/整季/，自带封面和投放台账。
+        </div>
+        <div class="picker">
+          <input type="text" id="batch-dir" spellcheck="false"
+                 placeholder="剧集目录；留空就用当前视频所在的目录">
+          <button class="ghost" id="batch-pick" style="display:none">选择…</button>
+        </div>
+        <div class="bible-btns">
+          <button class="ghost" id="batch-run">开始批量</button>
+          <span class="hint">每集约 1–2 分钟；跑的时候可以点「取消」</span>
+        </div>
+      </div>
+
+      <div class="hint">「连贯窗口」只在一个连续段落里挑片段，文案才不会跳戏。建议 120–240 秒；窗口越小，画面越集中。段长建议 10–15 秒，太短会让一句话跨好几段画面。</div>
+
+      <div class="bible">
+        <div class="bible-head">
+          <b>磁盘</b>
+          <span id="cache-state">—</span>
+        </div>
+        <div class="hint" id="cache-hint">
+          缓存是分析结果和缩略图，删了只是下次分析慢一点。成片、整季、总纲都不会被动。
+        </div>
+        <div class="bible-btns">
+          <button class="ghost" id="cache-clear">清理缓存</button>
+          <span class="hint" id="cache-free"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-2">
+      <h2>候选片段</h2>
+      <div class="seg-actions">
+        <button class="ghost" id="reshuffle">换一批片段</button>
+        <span class="hint">不满意就换一批，会避开当前这些位置</span>
+      </div>
+      <div class="grid" id="segs"></div>
+      <div class="hint" id="seg-hint" style="margin-top:12px"></div>
+    </section>
+
+    <section class="pane" id="pane-3">
+      <h2>文案</h2>
+      <div class="hint" style="margin-bottom:10px">
+        每一块对应一段画面。整段说完才切画面，所以这里的句数决定这一段的时长。
+      </div>
+      <div class="vtabs-row">
+        <div class="vtabs" id="var-tabs" style="display:none"></div>
+        <button class="ghost tiny" id="var-compare" style="display:none">并排看</button>
+      </div>
+      <div class="vscore" id="var-score" style="display:none"></div>
+      <div class="vcompare" id="vcompare" style="display:none"></div>
+      <div id="seg-editor"></div>
+      <div class="hint" id="script-hint" style="margin-top:10px"></div>
+    </section>
+
+    <section class="pane" id="pane-4">
+      <h2>成片</h2>
+      <div id="video-wrap"></div>
+      <div class="out-list" id="outputs"></div>
+      <div class="cover-row" id="cover-row" style="display:none">
+        <img id="cover" alt="封面">
+        <div class="hint">封面（和成片同目录，投放时当首图用）</div>
+      </div>
+      <div class="hint" id="out-hint" style="margin-top:10px"></div>
+
+      <div class="season" id="season" style="display:none">
+        <div class="bible-head">
+          <b>整季汇总</b>
+          <span id="season-state">—</span>
+        </div>
+        <div class="season-bar">
+          <div class="specs-row" id="season-specs"></div>
+          <button class="ghost tiny" id="season-ledger" style="display:none">打开台账</button>
+        </div>
+        <div class="season-sum" id="season-sum"></div>
+        <div class="season-grid" id="season-grid"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <aside>
+    <div>
+      <h2>本集</h2>
+      <div class="kv"><span>素材</span><b id="k-src">—</b></div>
+      <div class="kv"><span>时长</span><b id="k-dur">—</b></div>
+      <div class="kv"><span>片名</span><b id="k-title">—</b></div>
+    </div>
+
+    <div>
+      <h2>选择</h2>
+      <div class="kv"><span>已选</span><b id="k-sel">0 段</b></div>
+      <div class="kv"><span>画面</span><b id="k-total">0s</b></div>
+      <div class="kv"><span>目标解说</span><b id="k-target">45s</b></div>
+    </div>
+
+    <div>
+      <h2>参数</h2>
+      <div class="field">
+        <label>目标解说时长（秒）</label>
+        <input type="number" id="seconds" value="45" min="10" max="300">
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>音色</label>
+          <select id="voice">
+            <option value="zh-CN-YunjianNeural" selected>云健（低沉）</option>
+            <option value="zh-CN-YunxiNeural">云希（年轻）</option>
+            <option value="zh-CN-XiaoxiaoNeural">晓晓（女声）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>语速</label>
+          <select id="rate">
+            <option value="+0%">正常</option>
+            <option value="+2%" selected>+2%</option>
+            <option value="+5%">+5%</option>
+            <option value="-5%">-5%</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>原声音量（0=只用配音）</label>
+        <input type="number" id="srcvol" value="0.14" min="0" max="1" step="0.02">
+      </div>
+      <div class="field">
+        <label>字幕（按文案自动生成，不重新识别）</label>
+        <div class="two">
+          <select id="sub-style">
+            <option value="default" selected>白字描边</option>
+            <option value="yellow">黄字（醒目）</option>
+            <option value="big">大字</option>
+            <option value="small">小字</option>
+            <option value="plain">无描边</option>
+          </select>
+          <label class="chk inline"><input type="checkbox" id="burn-sub" checked><span>烧进画面</span></label>
+        </div>
+        <div class="hint">字幕时间轴直接由文案和每段画面长度算出，专名不会错；不勾就不带字幕。</div>
+      </div>
+      <div class="field">
+        <label>BGM（可选）</label>
+        <div class="picker">
+          <input type="text" id="bgm" spellcheck="false" placeholder="留空则不加背景音乐">
+          <button class="ghost" id="bgm-pick" style="display:none">选择…</button>
+        </div>
+        <div class="two">
+          <div class="field">
+            <label>BGM 音量</label>
+            <input type="number" id="bgm-vol" value="0.18" min="0" max="1" step="0.02">
+          </div>
+          <div class="field">
+            <label class="chk inline"><input type="checkbox" id="duck" checked><span>人声时自动压低</span></label>
+          </div>
+        </div>
+        <div class="hint">BGM 自动循环到成片长度，末尾 2 秒淡出。找不到文件只跳过，不报错。</div>
+      </div>
+      <div class="field">
+        <label>画幅（可多选，配音只做一次）</label>
+        <div class="specs" id="specs">
+          <label class="chk"><input type="checkbox" name="spec" value="1080x1920" checked><span>1080×1920 竖屏</span></label>
+          <label class="chk"><input type="checkbox" name="spec" value="1080x1440"><span>1080×1440</span></label>
+          <label class="chk"><input type="checkbox" name="spec" value="1920x1080"><span>1920×1080 横屏</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>顶部花字（留空则不加）</label>
+        <input type="text" id="title" value="{剧名} {集}">
+      </div>
+      <div class="field">
+        <label>背景设定（越细文案越好）</label>
+        <textarea id="bg" style="min-height:96px" spellcheck="false"
+                  placeholder="剧名、人物关系、这一集发生了什么…"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+      <div class="progress"><i id="pct"></i></div>
+      <button class="primary" id="action">分析片段</button>
+      <button class="ghost" id="cancel" style="display:none">取消当前任务</button>
+      <button class="ghost" id="open" style="display:none">打开输出目录</button>
+      <button class="ghost" id="reset">重置 / 换一集</button>
+      <div id="log"></div>
+    </div>
+  </aside>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
